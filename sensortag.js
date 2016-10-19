@@ -14,6 +14,45 @@
         5) listen for changes from the sensortag
       Step 4 (optional): Configure sensor update interval
 */
+//Setup sleep
+
+
+
+//Setup MQTT
+
+var mqtt = require('mqtt')
+var fs = require('fs');
+
+var cooldown = false;
+var timer = false;
+var options = {
+  port:  1883,
+  host: 'nyx.bjornhaug.net'
+};
+
+var client  = mqtt.connect(options)
+
+client.on('connect', function () {
+
+	console.log('Connected to MQTT')
+})
+
+client.on('message', function (topic, message) {
+  // message is Buffer
+  console.log(message.toString())
+  client.end()
+})
+
+//Set up RAzberry
+
+var zway = require('node-zway');
+ 
+// without password 
+ 
+// with password 
+var deviceApi = new zway.DeviceApi({ host: '10.0.1.12', user: 'admin', password: 'WelcometoCX01' });
+
+
 var SensorTag = require('sensortag');
 
 var log = function(text) {
@@ -46,12 +85,6 @@ var sensor = connected.then(function(tag) {
   tag.enableIrTemperature(log);
   tag.notifyIrTemperature(log);
 
-  tag.enableHumidity(log);
-  tag.notifyHumidity(log);
-
-  tag.enableGyroscope(log);
-  tag.notifyGyroscope(log);
-
   tag.enableAccelerometer(log);
   tag.notifyAccelerometer(log);
 
@@ -64,23 +97,19 @@ var sensor = connected.then(function(tag) {
 // You can register multiple listeners per sensor.
 //
 
-// A simple example of an act on the humidity sensor.
-var prev = 0;
-sensor.then(function(tag) {
-  tag.on("humidityChange", function(temp, humidity){
-    if(prev < 35 && humidity > 35) {
-      log("Don't slobber all over the SensorTag please...");
-    }
-    prev = humidity;
-  });
-});
 
 // A simple example of an act on the irTemperature sensor.
 sensor.then(function(tag) {
   tag.on("irTemperatureChange", function(objectTemp, ambientTemp) {
-    if(objectTemp > 25) {
-      log("You're so hot");
-    }
+    if(objectTemp > 29) {
+    	 if (!timer) {
+		    console.log(objectTemp)
+                    client.publish('paradise/notify/temperature', 'Close the window! It is to hot in here!');
+		    setTimeout(function() { timer = false; }, 100000);
+                    timer = true;
+                }
+
+	}
   })
 });
 
@@ -91,11 +120,17 @@ sensor.then(function(tag) {
         var yAcc = y.toFixed(1);
         var zAcc = z.toFixed(1);
 	if(Math.pow(Math.pow(yAcc,2)+Math.pow(zAcc,2),0.5)> 0.5 ) {
-		console.log("DONT SLAM THE DOOR");
- 	}
-	
+		
+		if (!cooldown) {
+			console.log("Door slammed too hard!")
+			client.publish('paradise/notify/door-slam', 'Do NOT slam the door!')
+			setTimeout(function() { cooldown = false; }, 10000);
+			cooldown = true;
+		}
+	}
   });
 });
+
 
 
 
