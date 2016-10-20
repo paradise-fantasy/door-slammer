@@ -25,6 +25,7 @@ var fs = require('fs');
 
 var cooldown = false;
 var timer = false;
+var temperatureTimer = false;
 var options = {
   port:  1883,
   host: 'nyx.bjornhaug.net'
@@ -43,15 +44,6 @@ client.on('message', function (topic, message) {
   client.end()
 })
 
-//Set up RAzberry
-
-var zway = require('node-zway');
- 
-// without password 
- 
-// with password 
-var deviceApi = new zway.DeviceApi({ host: '10.0.1.12', user: 'admin', password: 'WelcometoCX01' });
-
 
 var SensorTag = require('sensortag');
 
@@ -66,7 +58,8 @@ var log = function(text) {
 //------------------------------------------------------------------------------
 // It's address is printed on the inside of the red sleeve
 // (replace the one below).
-var ADDRESS = "b0:b4:48:d2:29:06";
+var ADDRESS = "BC:6A:29:26:8C:B1";
+
 var connected = new Promise((resolve, reject) => SensorTag.discoverByAddress(ADDRESS, (tag) => resolve(tag)))
   .then((tag) => new Promise((resolve, reject) => tag.connectAndSetup(() => resolve(tag))));
 
@@ -101,13 +94,18 @@ var sensor = connected.then(function(tag) {
 // A simple example of an act on the irTemperature sensor.
 sensor.then(function(tag) {
   tag.on("irTemperatureChange", function(objectTemp, ambientTemp) {
-    if(objectTemp > 29) {
-    	 if (!timer) {
-		    console.log(objectTemp)
-                    client.publish('paradise/notify/temperature', 'Close the window! It is to hot in here!');
-		    setTimeout(function() { timer = false; }, 100000);
-                    timer = true;
-                }
+    if (!timer) {
+      client.publish('paradise/log/temperature', "Temperature: " + ambientTemp.toString());
+      client.publish('paradise/api/temperature', "Temperature: " + ambientTemp.toString());
+      console.log("Temperature: " + ambientTemp)
+      if(ambientTemp > 25 && !temperatureTimer) {
+          client.publish('paradise/notify/temperature', 'Open the window! It is to hot, hot, hot in here!');
+          setTimeout(function() { temperatureTimer = false; }, 100000);
+          temperatureTimer = true;
+          console.log("Inne i too hot")
+      }
+      setTimeout(function() { timer = false; }, 15000);
+      timer = true;
 
 	}
   })
@@ -120,7 +118,7 @@ sensor.then(function(tag) {
         var yAcc = y.toFixed(1);
         var zAcc = z.toFixed(1);
 	if(Math.pow(Math.pow(yAcc,2)+Math.pow(zAcc,2),0.5)> 0.5 ) {
-		
+
 		if (!cooldown) {
 			console.log("Door slammed too hard!")
 			client.publish('paradise/notify/door-slam', 'Do NOT slam the door!')
