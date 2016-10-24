@@ -117,7 +117,7 @@ sensor.then(function(tag) {
 	var xAcc = x.toFixed(1);
         var yAcc = y.toFixed(1);
         var zAcc = z.toFixed(1);
-	if(Math.pow(Math.pow(yAcc,2)+Math.pow(zAcc,2),0.5)> 0.5 ) {
+	if(Math.pow(Math.pow(yAcc,2)+Math.pow(zAcc,2),0.5)> 0.75 ) {
 
 		if (!cooldown) {
 			console.log("Door slammed too hard!")
