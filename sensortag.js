@@ -76,6 +76,7 @@ var sensor = connected.then(function(tag) {
   log("connected");
 
   tag.enableIrTemperature(log);
+  tag.setIrTemperaturePeriod(300,log);
   tag.notifyIrTemperature(log);
 
   tag.enableAccelerometer(log);
@@ -96,15 +97,22 @@ sensor.then(function(tag) {
   tag.on("irTemperatureChange", function(objectTemp, ambientTemp) {
     if (!timer) {
       client.publish('paradise/log/temperature', "Temperature: " + ambientTemp.toString());
-      client.publish('paradise/api/temperature', "Temperature: " + ambientTemp.toString());
+	var json ='{"temperature":'+ambientTemp.toString() +'"sensor": "SensorTag" }'
+
+	var json = {
+		"sensor": "SensorTag",
+		"temperature": ambientTemp.toString()
+	}
+	console.log(json);
+      client.publish('paradise/api/temperature', JSON.stringify(json));
       console.log("Temperature: " + ambientTemp)
       if(ambientTemp > 25 && !temperatureTimer) {
-          client.publish('paradise/notify/temperature', 'Open the window! It is to hot, hot, hot in here!');
+          client.publish('paradise/notify/temperature', 'Open the window! It is to hot, hot, hot in here, so take of all your clothes!');
           setTimeout(function() { temperatureTimer = false; }, 100000);
           temperatureTimer = true;
           console.log("Inne i too hot")
       }
-      setTimeout(function() { timer = false; }, 15000);
+      setTimeout(function() { timer = false; }, 3000);
       timer = true;
 
 	}
@@ -113,7 +121,8 @@ sensor.then(function(tag) {
 
 // Accelerometer test
 sensor.then(function(tag) {
-  tag.on("accelerometerChange", function(x, y, z) {
+	console.log("I accelerometer") 
+	tag.on("accelerometerChange", function(x, y, z) {
 	var xAcc = x.toFixed(1);
         var yAcc = y.toFixed(1);
         var zAcc = z.toFixed(1);
