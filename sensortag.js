@@ -1,51 +1,21 @@
-/*
-    SensorTag IR Temperature sensor example
-    This example uses Sandeep Mistry's sensortag library for node.js to
-    read data from a TI sensorTag.
-    The sensortag library functions are all asynchronous and there is a
-    sequence that must be followed to connect and enable sensors.
-      Step 1: Connect
-        1) discover the tag
-        2) connect to and set up the tag
-      Step 2: Activate sensors
-        3) turn on the sensor you want to use (in this case, IR temp)
-        4) turn on notifications for the sensor
-      Step 3: Register listeners
-        5) listen for changes from the sensortag
-      Step 4 (optional): Configure sensor update interval
-*/
-//Setup sleep
-
-
-
-//Setup MQTT
+require('dotenv').config();
 
 var mqtt = require('mqtt')
 var fs = require('fs');
+var SensorTag = require('sensortag');
 
 var cooldown = false;
 var timer = false;
 var temperatureTimer = false;
-var options = {
-  port:  1883,
-  host: 'nyx.bjornhaug.net'
-};
 
-var client  = mqtt.connect(options)
+var client = mqtt.connect(process.env.MQTT_HOST, {
+  cert: fs.readFileSync('ca.crt'),
+  rejectUnauthorized: false
+});
 
 client.on('connect', function () {
-
 	console.log('Connected to MQTT')
 })
-
-client.on('message', function (topic, message) {
-  // message is Buffer
-  console.log(message.toString())
-  client.end()
-})
-
-
-var SensorTag = require('sensortag');
 
 var log = function(text) {
   if(text) {
@@ -121,7 +91,7 @@ sensor.then(function(tag) {
 
 // Accelerometer test
 sensor.then(function(tag) {
-	console.log("I accelerometer") 
+	console.log("I accelerometer")
 	tag.on("accelerometerChange", function(x, y, z) {
 	var xAcc = x.toFixed(1);
         var yAcc = y.toFixed(1);
