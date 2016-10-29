@@ -25,9 +25,9 @@ const publish = (topic, object, noJSON) => {
 /**
  * TEMPERATURE MEASUREMENTS
  */
-let lastTempMeasurement = Date.now();
-let lastHotMessage = Date.now();
-let lastColdMessage = Date.now();
+var lastTempMeasurement = Date.now();
+var lastHotMessage = Date.now();
+var lastColdMessage = Date.now();
 const handleTemperatureChange = (objectTemp, ambientTemp) => {
   const now = Date.now();
   if (now - lastTempMeasurement > TEMPERATURE_MEASUREMENT_COOLDOWN) {
@@ -50,7 +50,7 @@ const handleTemperatureChange = (objectTemp, ambientTemp) => {
 /**
  * DOOR SLAMMING MEASUREMENTS
  */
-let lastSlamMessage = Date.now();
+var lastSlamMessage = Date.now();
 const handleAccelerometerChange = (x, y, z) => {
   const now = Date.now();
   if (now - lastSlamMessage > DO_NOT_SLAM_COOLDOWN) {
@@ -69,7 +69,7 @@ const client = mqtt.connect(process.env.MQTT_HOST, {
   rejectUnauthorized: false
 });
 
-let connected = false;
+var connected = false;
 client.on('connect', function () {
 	console.log('Connected to MQTT');
   connected = true;
@@ -79,7 +79,8 @@ client.on('connect', function () {
 var ADDRESS = "BC:6A:29:26:8C:B1";
 SensorTag.discoverByAddress(ADDRESS, (tag) => {
   console.log('Discovered SensorTag');
-  tag.connectAndSetup(() => {
+  tag.connectAndSetup((err) => {
+    if (err) return console.error(err);
     console.log('SensorTag connected and set up');
 
     tag.enableIrTemperature();
