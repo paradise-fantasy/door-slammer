@@ -4,6 +4,7 @@ var mqtt = require('mqtt')
 var fs = require('fs');
 var SensorTag = require('sensortag');
 
+const SENSOR_ADDRESS = "BC:6A:29:26:8C:B1";
 const SENSOR_NAME = 'Door';
 
 const TEMPERATURE_MEASUREMENT_COOLDOWN = 3000; // Every 3 seconds
@@ -76,8 +77,7 @@ client.on('connect', function () {
 });
 
 // Setup SensorTag
-var ADDRESS = "BC:6A:29:26:8C:B1";
-SensorTag.discoverByAddress(ADDRESS, (tag) => {
+SensorTag.discoverByAddress(SENSOR_ADDRESS, (tag) => {
   console.log('Discovered SensorTag');
   tag.connectAndSetup((err) => {
     if (err) return console.error(err);
